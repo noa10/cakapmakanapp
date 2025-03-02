@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabase";
+import { supabase, Profile } from "@/lib/supabase";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -18,7 +18,6 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Add scroll event listener and admin check
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -30,15 +29,19 @@ const Navbar = () => {
 
     window.addEventListener("scroll", handleScroll);
 
-    // Check if user is admin
     const checkAdminStatus = async () => {
       if (user) {
         try {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('profiles')
             .select('is_admin')
             .eq('id', user.id)
             .single();
+          
+          if (error) {
+            console.error('Error checking admin status:', error);
+            return;
+          }
           
           setIsAdmin(data?.is_admin || false);
         } catch (error) {
@@ -70,7 +73,6 @@ const Navbar = () => {
             <span className="text-secondary font-light">Makan</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link
               to="/"
@@ -146,7 +148,6 @@ const Navbar = () => {
             )}
           </nav>
 
-          {/* Mobile Navigation Toggle */}
           <Button
             variant="ghost"
             size="icon"
@@ -162,7 +163,6 @@ const Navbar = () => {
           </Button>
         </div>
 
-        {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-b border-border shadow-lg animate-fade-down">
             <nav className="container mx-auto px-4 py-6 flex flex-col space-y-4">
