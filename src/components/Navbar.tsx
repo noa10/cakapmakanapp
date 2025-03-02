@@ -66,10 +66,17 @@ const Navbar = () => {
             >
               About
             </Link>
-            <Button size="sm" className="ml-2" variant="outline">
+            <Button 
+              size="sm" 
+              className="ml-2" 
+              variant="outline"
+            >
               Sign In
             </Button>
-            <Button size="sm" className="ml-2">
+            <Button 
+              size="sm" 
+              className="ml-2 bg-primary hover:bg-primary/90"
+            >
               Sign Up
             </Button>
           </nav>
@@ -126,7 +133,9 @@ const Navbar = () => {
                 <Button variant="outline" className="w-full">
                   Sign In
                 </Button>
-                <Button className="w-full">Sign Up</Button>
+                <Button className="w-full bg-primary hover:bg-primary/90">
+                  Sign Up
+                </Button>
               </div>
             </nav>
           </div>
