@@ -37,7 +37,7 @@ const Navbar = () => {
             className="font-medium text-xl md:text-2xl transition-all-200 hover:opacity-80"
           >
             <span className="text-primary font-semibold">Cakap</span>
-            <span className="font-light">Makan</span>
+            <span className="text-secondary font-light">Makan</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -75,7 +75,7 @@ const Navbar = () => {
             </Button>
             <Button 
               size="sm" 
-              className="ml-2 bg-primary hover:bg-primary/90"
+              className="ml-2 bg-accent hover:bg-accent/90 text-white"
             >
               Sign Up
             </Button>
@@ -133,7 +133,7 @@ const Navbar = () => {
                 <Button variant="outline" className="w-full">
                   Sign In
                 </Button>
-                <Button className="w-full bg-primary hover:bg-primary/90">
+                <Button className="w-full bg-accent hover:bg-accent/90 text-white">
                   Sign Up
                 </Button>
               </div>
