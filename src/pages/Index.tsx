@@ -22,7 +22,7 @@ const Index = () => {
                 Loved by Users & Businesses
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of satisfied users and businesses on the MalayChat platform.
+                Join thousands of satisfied users and businesses on the CakapMakan platform.
               </p>
             </div>
             
@@ -56,7 +56,7 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-muted-foreground">
-                  "Managing all our food delivery platform listings was a nightmare before MalayChat. 
+                  "Managing all our food delivery platform listings was a nightmare before CakapMakan. 
                   Now we update everything in one place and see all our orders in a single dashboard."
                 </p>
               </div>
@@ -93,7 +93,7 @@ const Index = () => {
                   Ready to Simplify Food Ordering?
                 </h2>
                 <p className="text-lg text-muted-foreground mb-8">
-                  Join MalayChat today and experience the future of food delivery in Malaysia. 
+                  Join CakapMakan today and experience the future of food delivery in Malaysia. 
                   Free for consumers, powerful for businesses.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">

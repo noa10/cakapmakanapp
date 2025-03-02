@@ -12,8 +12,8 @@ const Footer = () => {
               to="/"
               className="font-medium text-xl inline-block"
             >
-              <span className="text-primary font-semibold">Malay</span>
-              <span className="font-light">Chat</span>
+              <span className="text-primary font-semibold">Cakap</span>
+              <span className="font-light">Makan</span>
             </Link>
             <p className="text-muted-foreground text-sm">
               Malaysia's first AI-powered superapp for food ordering. 
@@ -102,7 +102,7 @@ const Footer = () => {
         
         <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground mb-4 sm:mb-0">
-            © {new Date().getFullYear()} MalayChat. All rights reserved.
+            © {new Date().getFullYear()} CakapMakan. All rights reserved.
           </p>
           
           <div className="flex space-x-4">

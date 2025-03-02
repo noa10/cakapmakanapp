@@ -36,8 +36,8 @@ const Navbar = () => {
             to="/"
             className="font-medium text-xl md:text-2xl transition-all-200 hover:opacity-80"
           >
-            <span className="text-primary font-semibold">Malay</span>
-            <span className="font-light">Chat</span>
+            <span className="text-primary font-semibold">Cakap</span>
+            <span className="font-light">Makan</span>
           </Link>
 
           {/* Desktop Navigation */}

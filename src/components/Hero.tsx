@@ -131,7 +131,7 @@ const Hero = () => {
                 <div className="p-4 bg-background">
                   <div className="rounded-2xl bg-white border border-border shadow-sm p-4 mb-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">M</div>
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">C</div>
                       <div className="flex-1">
                         <div className="h-4 bg-secondary rounded-full w-32 mb-2"></div>
                         <div className="h-20 bg-secondary rounded-lg w-full"></div>
@@ -151,7 +151,7 @@ const Hero = () => {
                   
                   <div className="rounded-2xl bg-white border border-border shadow-sm p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">M</div>
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">C</div>
                       <div className="flex-1">
                         <div className="h-4 bg-secondary rounded-full w-40 mb-2"></div>
                         <div className="h-16 bg-secondary rounded-lg w-full mb-2"></div>
