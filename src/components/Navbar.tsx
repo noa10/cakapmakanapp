@@ -1,12 +1,21 @@
 
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   // Add scroll event listener
   useEffect(() => {
@@ -66,19 +75,46 @@ const Navbar = () => {
             >
               About
             </Link>
-            <Button 
-              size="sm" 
-              className="ml-2" 
-              variant="outline"
-            >
-              Sign In
-            </Button>
-            <Button 
-              size="sm" 
-              className="ml-2 bg-accent hover:bg-accent/90 text-white"
-            >
-              Sign Up
-            </Button>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="ml-2">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <Link to="/profile" className="w-full">My Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button 
+                    size="sm" 
+                    className="ml-2" 
+                    variant="outline"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/auth?tab=signup">
+                  <Button 
+                    size="sm" 
+                    className="ml-2 bg-malaysia-blue hover:bg-malaysia-blue/90 text-white"
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Mobile Navigation Toggle */}
@@ -130,12 +166,37 @@ const Navbar = () => {
                 About
               </Link>
               <div className="flex flex-col space-y-2 pt-2">
-                <Button variant="outline" className="w-full">
-                  Sign In
-                </Button>
-                <Button className="w-full bg-accent hover:bg-accent/90 text-white">
-                  Sign Up
-                </Button>
+                {user ? (
+                  <>
+                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        My Profile
+                      </Button>
+                    </Link>
+                    <Button 
+                      onClick={() => {
+                        signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full bg-malaysia-red hover:bg-malaysia-red/90 text-white"
+                    >
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/auth?tab=signup" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button className="w-full bg-malaysia-blue hover:bg-malaysia-blue/90 text-white">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>
