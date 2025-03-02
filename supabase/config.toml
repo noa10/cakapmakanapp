@@ -2,3 +2,4 @@
 project_id = "dxqunhauabqjcklhkrsu"
 [functions.generate-response]
 verify_jwt = false
+
