@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Globe } from "lucide-react";
+import { Send, Globe, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -54,6 +54,16 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Mock response for testing if the Edge Function fails
+      let fallbackResponse = {
+        message: "Sorry, I'm having trouble connecting to the backend. Please try again later.",
+        source: "Error"
+      };
+      
+      if (language === "bahasa") {
+        fallbackResponse.message = "Maaf, saya mengalami masalah menghubungkan ke sistem. Sila cuba lagi kemudian.";
+      }
+
       // Call the Supabase Edge Function to get AI response
       const { data, error } = await supabase.functions.invoke("generate-response", {
         body: { 
@@ -63,23 +73,41 @@ const ChatInterface: React.FC = () => {
       });
 
       if (error) {
+        console.error("Error calling Edge Function:", error);
         throw error;
       }
-
+      
       // Add AI response
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: data.message,
+        text: data?.message || fallbackResponse.message,
         timestamp: new Date(),
-        source: data.source,
+        source: data?.source || fallbackResponse.source,
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error: any) {
       console.error("Error getting AI response:", error);
+      
+      // Add fallback AI response on error
+      const errorMessage = language === "english" 
+        ? "Sorry, I'm having trouble connecting to the backend. Please try again later."
+        : "Maaf, saya mengalami masalah menghubungkan ke sistem. Sila cuba lagi kemudian.";
+      
+      const aiErrorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "ai",
+        text: errorMessage,
+        timestamp: new Date(),
+        source: "Error",
+      };
+      setMessages((prev) => [...prev, aiErrorMessage]);
+      
       toast({
-        title: "Error",
-        description: "Failed to get response. Please try again.",
+        title: language === "english" ? "Error" : "Ralat",
+        description: language === "english" 
+          ? "Failed to get response. Please try again."
+          : "Gagal mendapatkan respons. Sila cuba lagi.",
         variant: "destructive",
       });
     } finally {
@@ -141,7 +169,7 @@ const ChatInterface: React.FC = () => {
                 }`}
               >
                 <p className="text-sm">{message.text}</p>
-                {message.source && (
+                {message.source && message.source !== "Error" && (
                   <p className="text-xs mt-1 opacity-70">
                     {language === "english" ? "Source" : "Sumber"}: {message.source}
                   </p>
@@ -212,7 +240,7 @@ const ChatInterface: React.FC = () => {
             size="icon"
             disabled={isLoading || !user || !inputValue.trim()}
           >
-            <Send size={18} />
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
           </Button>
         </form>
         {!user && (

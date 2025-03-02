@@ -1,13 +1,4 @@
 
 project_id = "dxqunhauabqjcklhkrsu"
-app_version = "0.1.0"
-
-[api]
-port = 54321
-schemas = ["public", "storage", "extensions"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
-[functions]
 [functions.generate-response]
 verify_jwt = false

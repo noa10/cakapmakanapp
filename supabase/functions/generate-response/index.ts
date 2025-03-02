@@ -104,7 +104,10 @@ const translateResponse = (text: string, preferBahasa: boolean): string => {
     "It's currently rated": "Ia kini dinilai",
     "and available on": "dan boleh didapati di",
     "Hello! I'm your AI assistant": "Halo! Saya ialah pembantu AI anda",
-    "How can I help you order food today": "Bagaimana saya boleh membantu anda memesan makanan hari ini"
+    "How can I help you order food today": "Bagaimana saya boleh membantu anda memesan makanan hari ini",
+    "I'm not sure I understand": "Saya tidak pasti saya faham",
+    "Are you looking for food recommendations": "Adakah anda mencari cadangan makanan",
+    "or would you like to place an order": "atau ingin membuat pesanan"
   };
   
   let translatedText = text;
