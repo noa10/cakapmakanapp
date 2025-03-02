@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, User } from "lucide-react";
@@ -11,13 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/lib/supabase";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Add scroll event listener
+  // Add scroll event listener and admin check
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -28,8 +29,28 @@ const Navbar = () => {
     };
 
     window.addEventListener("scroll", handleScroll);
+
+    // Check if user is admin
+    const checkAdminStatus = async () => {
+      if (user) {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .single();
+          
+          setIsAdmin(data?.is_admin || false);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      }
+    };
+
+    checkAdminStatus();
+
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [user]);
 
   return (
     <header
@@ -69,6 +90,14 @@ const Navbar = () => {
             >
               Business
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="text-foreground/80 hover:text-primary transition-all-200"
+              >
+                Admin
+              </Link>
+            )}
             <Link
               to="/"
               className="text-foreground/80 hover:text-primary transition-all-200"
@@ -158,6 +187,15 @@ const Navbar = () => {
               >
                 Business
               </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-foreground/80 hover:text-primary transition-all-200 py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 to="/"
                 className="text-foreground/80 hover:text-primary transition-all-200 py-2"
@@ -165,6 +203,7 @@ const Navbar = () => {
               >
                 About
               </Link>
+              
               <div className="flex flex-col space-y-2 pt-2">
                 {user ? (
                   <>
