@@ -41,7 +41,7 @@ export async function sendMessageToRequesty(
     // Use environment variable for API key
     const apiKey = getApiKey();
     
-    console.log("API Key available:", !!apiKey, "First 10 chars:", apiKey.substring(0, 10) + "...");
+    console.log("API Key available:", !!apiKey);
     console.log("Sending to URL:", url);
     console.log("Browser environment:", {
       userAgent: navigator.userAgent,

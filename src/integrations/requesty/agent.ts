@@ -109,7 +109,7 @@ export class RequestyAgent {
 
     // Create the final request body
     return {
-      model: "openai/gpt-4o",
+      model: "deepinfra/deepseek-ai/DeepSeek-R1",
       messages: this.state.conversationHistory,
       tools: formattedTools,
       temperature: 0.7,

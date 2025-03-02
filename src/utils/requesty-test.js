@@ -3,10 +3,15 @@
 
 async function testRequestyApi() {
   try {
-    const apiKey = process.env.VITE_REQUESTY_API_KEY || 
-      "sk-hRDsD6wARtyxAngfhNdxg/oLV8DzNM8zX/FKNXHv7qnuw1irdqGo1WOzdLDdDZ7ahqyRI4Qw6fH/34F+XVSjEPMBMJq1ckl6XYIP5Rv9ZQg=";
+    // Get API key from environment variable only
+    const apiKey = process.env.VITE_REQUESTY_API_KEY;
     
-    console.log('Testing Requesty.ai API with key:', apiKey.substring(0, 10) + '...');
+    if (!apiKey) {
+      console.error('ERROR: No API key found. Please set VITE_REQUESTY_API_KEY environment variable.');
+      return;
+    }
+    
+    console.log('Testing Requesty.ai API with valid key:', apiKey ? 'Present ✓' : 'Missing ✗');
     
     // Use the correct endpoint according to Requesty.ai documentation
     const url = "https://router.requesty.ai/v1/chat/completions";

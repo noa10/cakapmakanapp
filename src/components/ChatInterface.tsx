@@ -200,6 +200,21 @@ const ChatInterface: React.FC = () => {
     });
   };
 
+  const showEnvironmentDetails = () => {
+    const envDetails = {
+      browser: navigator.userAgent,
+      online: navigator.onLine,
+      language: navigator.language,
+      hasApiKey: !!import.meta.env?.VITE_REQUESTY_API_KEY,
+      viteMode: import.meta.env?.MODE || 'unknown'
+    };
+    
+    setDebugLogs(prev => [
+      ...prev,
+      `[DEBUG] Environment: ${JSON.stringify(envDetails, null, 2)}`
+    ]);
+  };
+
   return (
     <Card className="p-4 md:p-6 shadow-md border-primary/10 bg-white/80 backdrop-blur-sm">
       <div className="flex flex-col h-[60vh] md:h-[70vh]">
@@ -288,14 +303,7 @@ const ChatInterface: React.FC = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => {
-                  console.log("Environment:", {
-                    apiKey: import.meta.env?.VITE_REQUESTY_API_KEY ? "Set" : "Not set",
-                    supabaseUrl: import.meta.env?.VITE_SUPABASE_URL ? "Set" : "Not set",
-                    devMode: import.meta.env.DEV ? "Development" : "Production",
-                    browser: navigator.userAgent,
-                  });
-                }}
+                onClick={showEnvironmentDetails}
                 className="text-xs"
               >
                 Show Environment
