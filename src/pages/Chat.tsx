@@ -13,10 +13,10 @@ const Chat = () => {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8 animate-fade-up">
               <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                AI-Powered Food Ordering
+                Malaysian Food Ordering Assistant
               </h1>
               <p className="text-lg text-muted-foreground">
-                Chat with our AI assistant in Malay or English to order food from your favorite platforms.
+                Chat with our AI assistant in Bahasa Malaysia or English to order food from GrabFood, Foodpanda, and ShopeeFood.
               </p>
             </div>
             
