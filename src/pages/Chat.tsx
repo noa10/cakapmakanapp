@@ -4,12 +4,7 @@ import ChatInterface from "@/components/ChatInterface";
 const Chat = () => {
   return (
     <div className="min-h-screen flex flex-col">
-<<<<<<< HEAD
       <main className="flex-1 pt-20 pb-16">
-=======
-      <Navbar />
-      <main className="flex-1 pt-28 pb-16">
->>>>>>> 6c3eba6413bda64fd0f94b6fed15029cc9b62f23
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8 animate-fade-up">

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useRequestyAgent } from "@/integrations/requesty/useRequestyAgent";
+import { useRequestyAgent } from "@/integrations/requesty";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 

@@ -46,7 +46,12 @@ const Navbar = () => {
             return;
           }
           
-          setIsAdmin(data?.is_admin || false);
+          // Use type assertion and safely access the property
+          if (data && !('error' in data)) {
+            setIsAdmin((data as { is_admin?: boolean }).is_admin || false);
+          } else {
+            setIsAdmin(false);
+          }
         } catch (error) {
           console.error('Error checking admin status:', error);
         }

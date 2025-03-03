@@ -6,20 +6,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { AdminConversations } from '@/components/admin/AdminConversations';
-import { AdminSettings } from '@/components/admin/AdminSettings';
-import ErrorFallback from '@/components/ErrorFallback';
+import AdminDashboard from '@/components/admin/AdminDashboard';
+import AdminConversations from '@/components/admin/AdminConversations';
+import AdminSettings from '@/components/admin/AdminSettings';
+import { ErrorFallback } from '@/components/ErrorFallback';
 import { StateGraph } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { OrderState, OrderStateSchema } from "@/utils/state";
 import { GrabFoodService } from "@/services/grabfood";
 
+interface Profile {
+  id: string;
+  is_admin: boolean;
+}
+
 const Admin = () => {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -40,10 +45,15 @@ const Admin = () => {
           throw error;
         }
         
-        setIsAdmin(data?.is_admin || false);
+        if (data) {
+          const profile = data as unknown as Profile;
+          setIsAdmin(profile.is_admin || false);
+        } else {
+          setIsAdmin(false);
+        }
       } catch (err: any) {
         console.error('Error checking admin status:', err);
-        setError(err.message);
+        setError(new Error(err.message || 'Failed to verify admin privileges'));
         toast({
           title: 'Error',
           description: 'Failed to verify admin privileges',
