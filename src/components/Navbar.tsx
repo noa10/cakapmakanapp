@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase, Profile } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 const Navbar = () => {
@@ -20,6 +20,7 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
+  // Add scroll event listener
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -192,71 +193,49 @@ const Navbar = () => {
                       ? "text-primary bg-primary/10"
                       : "text-foreground/70 hover:text-primary hover:bg-primary/5"
                   )}
-                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.name}
                 </Link>
               ))}
             </nav>
-            
-            <div className="pt-2 border-t">
-              {user ? (
-                <div className="space-y-2">
-                  <div className="px-3 py-1 text-sm font-medium">
-                    {user.user_metadata?.full_name || user.email}
-                  </div>
+            {user ? (
+              <>
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {user.email}
+                </div>
+                <div className="flex flex-col space-y-1">
                   <Link
                     to="/profile"
-                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-3 py-2 text-sm font-medium hover:text-primary"
                   >
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                    Profile
                   </Link>
                   {isAdmin && (
                     <Link
                       to="/admin"
-                      className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5"
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3 py-2 text-sm font-medium hover:text-primary"
                     >
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Admin</span>
+                      Admin
                     </Link>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      signOut();
-                      setIsMobileMenuOpen(false);
-                    }}
+                  <button
+                    onClick={signOut}
+                    className="px-3 py-2 text-sm font-medium text-destructive hover:text-destructive"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign out</span>
-                  </Button>
+                    Sign out
+                  </button>
                 </div>
-              ) : (
-                <div className="flex flex-col space-y-2">
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link 
-                      to="/auth?mode=signin"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button size="sm" className="w-full" asChild>
-                    <Link 
-                      to="/auth?mode=signup"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign Up
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="flex flex-col space-y-2">
+                <Button variant="ghost" size="sm" asChild className="w-full">
+                  <Link to="/auth?mode=signin">Sign In</Link>
+                </Button>
+                <Button size="sm" asChild className="w-full">
+                  <Link to="/auth?mode=signup">Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

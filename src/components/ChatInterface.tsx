@@ -38,7 +38,7 @@ const ChatInterface: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState<"english" | "bahasa">("english");
-  const [useAgent, setUseAgent] = useState(true);
+  const [useAgent, setUseAgent] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
@@ -207,173 +207,114 @@ const ChatInterface: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="space-y-4"
       >
-        <Card className="border shadow-md overflow-hidden rounded-xl">
-          <div className="flex flex-col h-[calc(100vh-12rem)] max-h-[800px]">
-            {/* Header with controls */}
-            <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between bg-card gap-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  {useAgent ? (
-                    <Bot className="h-4 w-4 text-primary" />
-                  ) : (
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+        {/* Chat Messages */}
+        <Card className="p-4 min-h-[400px] max-h-[600px] overflow-y-auto">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "flex",
+                  message.sender === "user" ? "justify-end" : "justify-start"
+                )}
+              >
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-lg p-3",
+                    message.sender === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  )}
+                >
+                  <p className="text-sm">{message.text}</p>
+                  {message.source && (
+                    <p className="text-xs mt-1 opacity-70">
+                      Source: {message.source}
+                    </p>
                   )}
                 </div>
-                <div>
-                  <h2 className="font-medium">
-                    {useAgent ? "AI Food Assistant" : "Standard Chat"}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {language === "english" ? "Responding in English" : "Menjawab dalam Bahasa Malaysia"}
-                  </p>
+              </motion.div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-lg p-3">
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon" onClick={clearChat}>
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Clear chat</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Globe className="h-4 w-4 mr-1" />
-                      {language === "english" ? "English" : "Bahasa"}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setLanguage("english")}>
-                      English
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage("bahasa")}>
-                      Bahasa Malaysia
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                
-                <Button 
-                  variant={useAgent ? "default" : "outline"} 
-                  size="sm"
-                  onClick={toggleAgentMode}
-                  className="gap-1"
-                >
-                  {useAgent ? <Sparkles className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
-                  {useAgent ? "Agent Mode" : "Standard Mode"}
-                </Button>
-              </div>
-            </div>
-            
-            {/* Messages area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-secondary/10">
-              <AnimatePresence initial={false}>
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={cn(
-                      "flex",
-                      message.sender === "user" ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[85%] rounded-2xl p-4",
-                        message.sender === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border shadow-sm"
-                      )}
-                    >
-                      <div className="text-sm whitespace-pre-wrap">
-                        {message.text}
-                      </div>
-                      {message.source && (
-                        <div className="text-xs mt-2 opacity-70 flex items-center">
-                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                            {message.source}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              
-              <div ref={messagesEndRef} />
-              
-              {/* Loading indicator */}
-              {isLoading && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
-                >
-                  <div className="bg-card border rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span className="text-sm">Thinking...</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-            
-            {/* Suggestion chips */}
-            <div className="p-3 border-t bg-card flex gap-2 overflow-x-auto">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => {
-                    setInputValue(suggestion);
-                    inputRef.current?.focus();
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary whitespace-nowrap transition-colors flex items-center gap-1 hover:text-primary"
-                >
-                  {suggestion}
-                  <ChevronRight className="h-3 w-3" />
-                </button>
-              ))}
-            </div>
-            
-            {/* Input area */}
-            <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
-              <div className="flex gap-2">
-                <Input
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Type your message..."
-                  disabled={isLoading}
-                  className="flex-1 rounded-full"
-                />
-                <Button 
-                  type="submit" 
-                  disabled={isLoading || !inputValue.trim()}
-                  size="icon"
-                  className="rounded-full h-10 w-10 flex items-center justify-center"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">Send</span>
-                </Button>
-              </div>
-            </form>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         </Card>
+
+        {/* Input Form */}
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Input
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Type your message..."
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button type="submit" disabled={isLoading}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+
+        {/* Language Toggle */}
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleLanguage}
+            className="gap-2"
+          >
+            <Globe className="h-4 w-4" />
+            {language === "english" ? "Switch to BM" : "Switch to English"}
+          </Button>
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleAgentMode}
+            className="gap-2"
+          >
+            <Bot className="h-4 w-4" />
+            {useAgent ? "Switch to Standard Mode" : "Switch to Agent Mode"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearChat}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Clear Chat
+          </Button>
+        </div>
+
+        {/* Suggestions */}
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((suggestion, index) => (
+            <Button
+              key={index}
+              variant="outline"
+              size="sm"
+              onClick={() => setInputValue(suggestion)}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {suggestion}
+            </Button>
+          ))}
+        </div>
       </motion.div>
     </div>
   );

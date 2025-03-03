@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+<<<<<<< HEAD
     proxy: {
       '/requesty-api': {
         target: 'https://router.requesty.ai',
@@ -26,6 +27,8 @@ export default defineConfig(({ mode }) => ({
         }
       }
     }
+=======
+>>>>>>> 6c3eba6413bda64fd0f94b6fed15029cc9b62f23
   },
   plugins: [
     react(),
