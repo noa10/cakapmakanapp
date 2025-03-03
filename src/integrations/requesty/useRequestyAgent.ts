@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { createAgent, RequestyAgent } from "./agent";
 import { useToast } from "@/hooks/use-toast";
+import { getActiveLLMConfig } from "./index";
 
 export function useRequestyAgent() {
   const [agent, setAgent] = useState<RequestyAgent | null>(null);
@@ -11,14 +13,15 @@ export function useRequestyAgent() {
   useEffect(() => {
     const initializeAgent = () => {
       try {
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_REQUESTY_API_KEY as string;
+        // Get API key from active LLM config or environment
+        const activeConfig = getActiveLLMConfig();
+        const apiKey = activeConfig?.apiKey || import.meta.env.VITE_REQUESTY_API_KEY as string;
         
         if (!apiKey) {
-          console.error("Requesty API key is missing");
+          console.error("API key is missing");
           toast({
             title: "Configuration Error",
-            description: "Requesty API key is not configured.",
+            description: "API key is not configured. Please check LLM settings in the admin panel.",
             variant: "destructive",
           });
           return;
@@ -95,4 +98,4 @@ export function useRequestyAgent() {
     resetConversation,
     isReady: !!agent,
   };
-} 
+}

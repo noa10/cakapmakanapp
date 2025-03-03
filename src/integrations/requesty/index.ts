@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 
 // The type for the response from Requesty.ai
@@ -6,8 +7,47 @@ export type RequestyResponse = {
   source?: string;
 };
 
+// LLM Provider Configuration
+export interface LLMProviderConfig {
+  id: string;
+  name: string;
+  provider: 'openai' | 'ollama' | 'grok';
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  isActive: boolean;
+}
+
+// Get active LLM provider configuration
+export const getActiveLLMConfig = (): LLMProviderConfig | null => {
+  // Try to get from localStorage
+  const storedConfig = localStorage.getItem('activeLLMConfig');
+  if (storedConfig) {
+    try {
+      return JSON.parse(storedConfig);
+    } catch (e) {
+      console.error('Failed to parse stored LLM config', e);
+    }
+  }
+  
+  // Default config if none is found
+  return {
+    id: 'default-openai',
+    name: 'OpenAI GPT-4o',
+    provider: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: '', // Will fall back to env variable or development key
+    model: 'gpt-4o',
+    isActive: true
+  };
+};
+
 // Get API key with fallback for development
 const getApiKey = (): string => {
+  // First check if we have an active LLM config with an API key
+  const activeConfig = getActiveLLMConfig();
+  if (activeConfig?.apiKey) return activeConfig.apiKey;
+  
   // Try to get from import.meta.env first (Vite's approach)
   const viteKey = import.meta.env?.VITE_REQUESTY_API_KEY;
   if (viteKey) return viteKey;
@@ -28,6 +68,27 @@ const getApiKey = (): string => {
   return '';
 };
 
+// Get the base URL for the API request
+const getBaseUrl = (): string => {
+  // Check if we have an active LLM config with a base URL
+  const activeConfig = getActiveLLMConfig();
+  if (activeConfig?.baseUrl) {
+    // If it's not OpenAI, use the actual baseUrl
+    if (activeConfig.provider !== 'openai') {
+      return activeConfig.baseUrl;
+    }
+  }
+  
+  // Default to proxy URL for OpenAI-compatible endpoints
+  return "/requesty-api/v1/chat/completions";
+};
+
+// Get the model to use for the request
+const getModel = (): string => {
+  const activeConfig = getActiveLLMConfig();
+  return activeConfig?.model || "openai/gpt-4o";
+};
+
 // The main function to send a message to Requesty.ai
 export async function sendMessageToRequesty(
   message: string, 
@@ -35,14 +96,16 @@ export async function sendMessageToRequesty(
   userId?: string
 ): Promise<RequestyResponse> {
   try {
-    // Use proxy URL instead of direct API endpoint
-    const url = "/requesty-api/v1/chat/completions";
-    
-    // Use environment variable for API key
+    // Get configuration
+    const activeConfig = getActiveLLMConfig();
+    const url = getBaseUrl();
     const apiKey = getApiKey();
+    const model = getModel();
     
     console.log("API Key available:", !!apiKey);
-    console.log("Sending to URL:", url);
+    console.log("Using URL:", url);
+    console.log("Using model:", model);
+    console.log("Active LLM Provider:", activeConfig?.provider || 'default');
     console.log("Browser environment:", {
       userAgent: navigator.userAgent,
       online: navigator.onLine,
@@ -50,29 +113,63 @@ export async function sendMessageToRequesty(
     });
     
     if (!apiKey) {
-      throw new Error("Requesty.ai API key is not configured");
+      throw new Error("API key is not configured");
     }
     
-    console.log("Sending request to Requesty.ai with language:", language);
+    console.log("Sending request with language:", language);
     
-    // Format request according to OpenAI-compatible API
-    const requestBody = {
-      model: "openai/gpt-4o", // We've confirmed this model works
-      messages: [
-        {
-          role: "system",
-          content: `You are a friendly food ordering assistant. You help users order food from restaurants. ${
-            language === 'malay' ? 'Please respond in Malay language.' : 'Please respond in English.'
-          }`
-        },
-        {
-          role: "user",
-          content: message
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 500
-    };
+    // Format request according to the provider
+    let requestBody;
+    
+    switch (activeConfig?.provider) {
+      case 'ollama':
+        requestBody = {
+          model: model,
+          prompt: message,
+          stream: false
+        };
+        break;
+      
+      case 'grok':
+        requestBody = {
+          model: model,
+          messages: [
+            {
+              role: "system",
+              content: `You are a friendly food ordering assistant. You help users order food from restaurants. ${
+                language === 'malay' ? 'Please respond in Malay language.' : 'Please respond in English.'
+              }`
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ]
+        };
+        break;
+      
+      case 'openai':
+      default:
+        // OpenAI-compatible format
+        requestBody = {
+          model: model,
+          messages: [
+            {
+              role: "system",
+              content: `You are a friendly food ordering assistant. You help users order food from restaurants. ${
+                language === 'malay' ? 'Please respond in Malay language.' : 'Please respond in English.'
+              }`
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        };
+        break;
+    }
     
     console.log("Request body:", JSON.stringify(requestBody));
     
@@ -93,48 +190,57 @@ export async function sendMessageToRequesty(
         // Continue with the actual request anyway
       }
       
-      // First try with standard approach
-      try {
-        console.log("Attempting standard fetch request...");
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "Accept": "application/json",
-            "Origin": window.location.origin,
-            "Cache-Control": "no-cache"
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
-          credentials: 'omit',
-          referrerPolicy: 'no-referrer'
-        });
+      console.log("Attempting fetch request to:", url);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+          "Accept": "application/json",
+          "Origin": window.location.origin,
+          "Cache-Control": "no-cache"
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fetch request succeeded:", data);
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Standard fetch request succeeded:", data);
+        // Extract the response based on the provider
+        let responseMessage;
+        
+        switch (activeConfig?.provider) {
+          case 'ollama':
+            responseMessage = data.response;
+            break;
           
-          // Extract the response from the OpenAI-compatible format
-          const responseMessage = data.choices?.[0]?.message?.content || 
-            "Sorry, I couldn't process your request at this time.";
+          case 'grok':
+            responseMessage = data.choices?.[0]?.message?.content;
+            break;
           
-          return {
-            message: responseMessage,
-            source: data.source || "Requesty.ai"
-          };
-        } else {
-          console.warn("Standard fetch failed, status:", response.status);
-          // Let it fall through to try alternative approaches
+          case 'openai':
+          default:
+            responseMessage = data.choices?.[0]?.message?.content;
+            break;
         }
-      } catch (standardFetchError) {
-        console.warn("Standard fetch approach failed:", standardFetchError);
-        // Continue to alternative approaches
+        
+        if (!responseMessage) {
+          responseMessage = "Sorry, I couldn't process your request at this time.";
+        }
+        
+        return {
+          message: responseMessage,
+          source: activeConfig?.name || "AI Assistant"
+        };
+      } else {
+        console.warn("Fetch failed, status:", response.status);
+        const errorText = await response.text();
+        throw new Error(`API request failed: ${response.status} - ${errorText || response.statusText}`);
       }
-      
-      // If we got here, all approaches failed
-      throw new Error("All connection approaches to Requesty.ai failed");
-      
     } catch (fetchError: any) {
       console.error("Fetch error details:", {
         name: fetchError.name,
@@ -152,7 +258,7 @@ export async function sendMessageToRequesty(
       clearTimeout(timeoutId);
     }
   } catch (error: any) {
-    console.error("Error calling Requesty.ai:", error);
+    console.error("Error calling API:", error);
     throw error;
   }
 }
@@ -167,8 +273,8 @@ export function useRequesty() {
     } catch (error: any) {
       console.error("Error in useRequesty hook:", error);
       toast({
-        title: "Requesty.ai Error",
-        description: error.message || "Failed to connect to Requesty.ai. Please try again.",
+        title: "API Error",
+        description: error.message || "Failed to connect to the API. Please try again.",
         variant: "destructive",
       });
       throw error;
