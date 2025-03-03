@@ -1,69 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext';
-import { RequestyProvider } from '@/context/RequestyContext';
-import Index from '@/pages/Index';
-import Chat from '@/pages/Chat';
-import Business from '@/pages/Business';
-import Auth from '@/pages/Auth';
-import Profile from '@/pages/Profile';
-import NotFound from '@/pages/NotFound';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { Toaster } from '@/components/ui/toaster';
-import NetworkStatus from '@/components/NetworkStatus';
-import TestChat from '@/pages/TestChat';
-import Admin from '@/pages/Admin';
 
-function App() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Index from "./pages/Index";
+import Chat from "./pages/Chat";
+import Business from "./pages/Business";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+const queryClient = new QueryClient();
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  return (
-    <Router>
-      <AuthProvider>
-        <RequestyProvider>
-          <NetworkStatus />
-          <Navbar />
-          <div className="min-h-screen pt-16">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/business" element={<Business />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              } />
-              <Route path="/test-chat" element={<TestChat />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-          <Footer />
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <BrowserRouter>
+        <AuthProvider>
           <Toaster />
-        </RequestyProvider>
-      </AuthProvider>
-    </Router>
-  );
-}
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/business" element={<Business />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

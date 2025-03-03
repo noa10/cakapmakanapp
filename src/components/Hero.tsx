@@ -51,22 +51,21 @@ const Hero = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-up" style={{ animationDelay: "100ms" }}>
-              <Button size="lg" className="px-8 py-6 text-base rounded-full" asChild>
-                <Link to="/chat">
+              <Link to="/chat">
+                <Button size="lg" className="px-8 py-6 text-base rounded-full">
                   Try the Chat Now
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="px-8 py-6 text-base rounded-full"
-                asChild
-              >
-                <Link to="/business">
+                </Button>
+              </Link>
+              <Link to="/business">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="px-8 py-6 text-base rounded-full"
+                >
                   For Businesses
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
 
             <div className="flex items-center justify-center lg:justify-start space-x-4 text-sm text-muted-foreground animate-fade-up" style={{ animationDelay: "200ms" }}>
