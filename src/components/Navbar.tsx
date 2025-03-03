@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, User } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, User, LogOut, Settings, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -11,12 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase, Profile } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,195 +54,212 @@ const Navbar = () => {
 
     checkAdminStatus();
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [user]);
+
+  // Close mobile menu when changing routes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Chat", path: "/chat" },
+    { name: "Business", path: "/business" },
+  ];
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all-300 ${
-        isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-sm py-4"
-          : "bg-transparent py-6"
-      }`}
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
+        isScrolled 
+          ? "bg-background/80 backdrop-blur-md border-b shadow-sm" 
+          : "bg-transparent"
+      )}
     >
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex justify-between items-center">
-          <Link
-            to="/"
-            className="font-medium text-xl md:text-2xl transition-all-200 hover:opacity-80"
-          >
-            <span className="text-primary font-semibold">Cakap</span>
-            <span className="text-secondary font-light">Makan</span>
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center">
+            <span className="text-xl font-semibold text-primary">Cakap</span>
+            <span className="text-xl font-light">Makan</span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/"
-              className="text-foreground/80 hover:text-primary transition-all-200"
-            >
-              Home
-            </Link>
-            <Link
-              to="/chat"
-              className="text-foreground/80 hover:text-primary transition-all-200"
-            >
-              Chat
-            </Link>
-            <Link
-              to="/business"
-              className="text-foreground/80 hover:text-primary transition-all-200"
-            >
-              Business
-            </Link>
-            {isAdmin && (
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {navLinks.map((link) => (
               <Link
-                to="/admin"
-                className="text-foreground/80 hover:text-primary transition-all-200"
+                key={link.path}
+                to={link.path}
+                className={cn(
+                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  location.pathname === link.path
+                    ? "text-primary bg-primary/10"
+                    : "text-foreground/70 hover:text-primary hover:bg-primary/5"
+                )}
               >
-                Admin
+                {link.name}
               </Link>
-            )}
-            <Link
-              to="/"
-              className="text-foreground/80 hover:text-primary transition-all-200"
-            >
-              About
-            </Link>
-            
+            ))}
+          </nav>
+
+          {/* User Menu or Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-2">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="ml-2">
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="max-w-[100px] truncate">
+                      {user.user_metadata?.full_name || user.email}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <Link to="/profile" className="w-full">My Profile</Link>
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5 text-sm font-medium">
+                    {user.email}
+                  </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    Sign Out
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer w-full">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer w-full">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Admin</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={signOut}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <>
-                <Link to="/auth">
-                  <Button 
-                    size="sm" 
-                    className="ml-2" 
-                    variant="outline"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/auth?tab=signup">
-                  <Button 
-                    size="sm" 
-                    className="ml-2 bg-malaysia-blue hover:bg-malaysia-blue/90 text-white"
-                  >
-                    Sign Up
-                  </Button>
-                </Link>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/auth?mode=signin">Sign In</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/auth?mode=signup">Sign Up</Link>
+                </Button>
               </>
             )}
-          </nav>
+          </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex md:hidden"
-            aria-label="Toggle Menu"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </Button>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
         </div>
+      </div>
 
-        {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-b border-border shadow-lg animate-fade-down">
-            <nav className="container mx-auto px-4 py-6 flex flex-col space-y-4">
-              <Link
-                to="/"
-                className="text-foreground/80 hover:text-primary transition-all-200 py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/chat"
-                className="text-foreground/80 hover:text-primary transition-all-200 py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Chat
-              </Link>
-              <Link
-                to="/business"
-                className="text-foreground/80 hover:text-primary transition-all-200 py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Business
-              </Link>
-              {isAdmin && (
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-background border-b shadow-sm">
+          <div className="container mx-auto px-4 py-3 space-y-3">
+            <nav className="flex flex-col space-y-1">
+              {navLinks.map((link) => (
                 <Link
-                  to="/admin"
-                  className="text-foreground/80 hover:text-primary transition-all-200 py-2"
+                  key={link.path}
+                  to={link.path}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    location.pathname === link.path
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground/70 hover:text-primary hover:bg-primary/5"
+                  )}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Admin
+                  {link.name}
                 </Link>
-              )}
-              <Link
-                to="/"
-                className="text-foreground/80 hover:text-primary transition-all-200 py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                About
-              </Link>
-              
-              <div className="flex flex-col space-y-2 pt-2">
-                {user ? (
-                  <>
-                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        My Profile
-                      </Button>
-                    </Link>
-                    <Button 
-                      onClick={() => {
-                        signOut();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full bg-malaysia-red hover:bg-malaysia-red/90 text-white"
-                    >
-                      Sign Out
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link to="/auth?tab=signup" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-malaysia-blue hover:bg-malaysia-blue/90 text-white">
-                        Sign Up
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
+              ))}
             </nav>
+            
+            <div className="pt-2 border-t">
+              {user ? (
+                <div className="space-y-2">
+                  <div className="px-3 py-1 text-sm font-medium">
+                    {user.user_metadata?.full_name || user.email}
+                  </div>
+                  <Link
+                    to="/profile"
+                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      signOut();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col space-y-2">
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Link 
+                      to="/auth?mode=signin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                  </Button>
+                  <Button size="sm" className="w-full" asChild>
+                    <Link 
+                      to="/auth?mode=signup"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
 };

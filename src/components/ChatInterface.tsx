@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Globe, Loader2, Bot, Bug } from "lucide-react";
+import { Send, Globe, Loader2, Bot, MessageSquare, RefreshCw, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,16 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useRequestyAgent } from "@/integrations/requesty/useRequestyAgent";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Message = {
   id: string;
@@ -31,393 +40,342 @@ const ChatInterface: React.FC = () => {
   const [language, setLanguage] = useState<"english" | "bahasa">("english");
   const [useAgent, setUseAgent] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   
   // Use our RequestyAgent hook
   const { sendMessage: sendAgentMessage, isLoading: agentLoading, resetConversation } = useRequestyAgent();
 
-  const [showDebug, setShowDebug] = useState(false);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  
-  // Capture console logs for debugging
-  useEffect(() => {
-    const originalConsoleLog = console.log;
-    const originalConsoleError = console.error;
-    const originalConsoleWarn = console.warn;
-    
-    // Function to add to debug logs
-    const addDebugLog = (type: string, args: any[]) => {
-      const message = args.map(arg => 
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-      ).join(' ');
-      
-      setDebugLogs(prev => [...prev, `[${type}] ${message}`].slice(-50)); // Keep last 50 logs
-    };
-    
-    // Override console methods
-    console.log = (...args) => {
-      originalConsoleLog(...args);
-      addDebugLog('LOG', args);
-    };
-    
-    console.error = (...args) => {
-      originalConsoleError(...args);
-      addDebugLog('ERROR', args);
-    };
-    
-    console.warn = (...args) => {
-      originalConsoleWarn(...args);
-      addDebugLog('WARN', args);
-    };
-    
-    // Restore original console methods on cleanup
-    return () => {
-      console.log = originalConsoleLog;
-      console.error = originalConsoleError;
-      console.warn = originalConsoleWarn;
-    };
-  }, []);
-
-  // Scroll to bottom whenever messages change
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  
+  // Focus input on load
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
-
-    // Add user message
+    
+    if (!inputValue.trim() || isLoading) return;
+    
     const userMessage: Message = {
       id: Date.now().toString(),
       sender: "user",
       text: inputValue,
       timestamp: new Date(),
     };
+    
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
-
+    
     try {
-      let responseData;
-
       if (useAgent) {
-        // Use the RequestyAgent to process the message
-        responseData = await sendAgentMessage(inputValue, language);
+        // Use the Requesty.ai agent
+        const response = await sendAgentMessage(inputValue, language === "bahasa" ? "malay" : "english");
+        
+        if (response) {
+          const aiMessage: Message = {
+            id: Date.now().toString(),
+            sender: "ai",
+            text: response.message,
+            timestamp: new Date(),
+            source: response.source,
+          };
+          
+          setMessages((prev) => [...prev, aiMessage]);
+        } else {
+          throw new Error("No response from agent");
+        }
       } else {
-        // Use the Supabase Edge Function to get AI response
+        // Fallback to Supabase Edge Function
         const { data, error } = await supabase.functions.invoke("generate-response", {
           body: { 
             message: inputValue,
-            language: language
-          },
+            language: language === "bahasa" ? "malay" : "english"
+          }
         });
-
+        
         if (error) {
-          console.error("Error calling Edge Function:", error);
           throw error;
         }
         
-        responseData = data;
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          sender: "ai",
+          text: data.message,
+          timestamp: new Date(),
+          source: "Supabase Edge Function",
+        };
+        
+        setMessages((prev) => [...prev, aiMessage]);
       }
-      
-      if (!responseData) {
-        throw new Error("Failed to get response");
-      }
-      
-      // Add AI response
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: "ai",
-        text: responseData.message,
-        timestamp: new Date(),
-        source: responseData.source,
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error getting AI response:", error);
       
-      // Add fallback AI response on error
-      const errorMessage = language === "english" 
-        ? "Sorry, I'm having trouble connecting to the backend. Please try again later."
-        : "Maaf, saya mengalami masalah menghubungkan ke sistem. Sila cuba lagi kemudian.";
-      
-      const aiErrorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
         sender: "ai",
-        text: errorMessage,
+        text: "Sorry, I'm having trouble connecting to the backend. Please try again later.",
         timestamp: new Date(),
-        source: "Error",
       };
-      setMessages((prev) => [...prev, aiErrorMessage]);
+      
+      setMessages((prev) => [...prev, errorMessage]);
       
       toast({
-        title: language === "english" ? "Error" : "Ralat",
-        description: language === "english" 
-          ? "Failed to get response. Please try again."
-          : "Gagal mendapatkan respons. Sila cuba lagi.",
+        title: "Error",
+        description: "Failed to get response from AI. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      // Focus input after sending
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === "english" ? "bahasa" : "english");
-    // Update welcome message based on language
-    const welcomeMessage = language === "english" 
-      ? "Halo! Saya ialah pembantu AI anda. Bagaimana saya boleh membantu anda memesan makanan hari ini?"
-      : "Hello! I'm your AI assistant. How can I help you order food today?";
+    const newLanguage = language === "english" ? "bahasa" : "english";
+    setLanguage(newLanguage);
     
     toast({
-      title: language === "english" ? "Bahasa Malaysia" : "English",
-      description: language === "english" ? "Beralih ke Bahasa Malaysia" : "Switched to English",
+      title: "Language Changed",
+      description: newLanguage === "english" 
+        ? "AI will now respond in English" 
+        : "AI akan menjawab dalam Bahasa Malaysia",
+      variant: "default",
     });
   };
-
+  
   const toggleAgentMode = () => {
-    setUseAgent(!useAgent);
+    setUseAgent((prev) => !prev);
+    
+    toast({
+      title: "Mode Changed",
+      description: !useAgent 
+        ? "Using intelligent agent mode" 
+        : "Using standard chat mode",
+      variant: "default",
+    });
+    
     // Reset conversation when switching modes
     resetConversation();
-    
-    // Add message about switching modes
-    const switchMessage: Message = {
-      id: Date.now().toString(),
+    setMessages([{
+      id: "welcome",
       sender: "ai",
-      text: useAgent 
-        ? "Switched to standard chat mode."
-        : "Switched to intelligent agent mode. I can now help with specific food ordering tasks.",
+      text: !useAgent 
+        ? "Hello! I'm your AI food ordering assistant. How can I help you today?" 
+        : "Hello! I'm in standard chat mode now. How can I help?",
       timestamp: new Date(),
-      source: "System",
-    };
-    setMessages((prev) => [...prev, switchMessage]);
+    }]);
+  };
+  
+  const clearChat = () => {
+    resetConversation();
+    setMessages([{
+      id: "welcome",
+      sender: "ai",
+      text: "Hello! I'm your AI assistant. How can I help you order food today?",
+      timestamp: new Date(),
+    }]);
     
     toast({
-      title: useAgent ? "Standard Mode" : "Agent Mode",
-      description: useAgent ? "Switched to standard chat" : "Switched to intelligent agent",
+      title: "Chat Cleared",
+      description: "Started a new conversation",
+      variant: "default",
     });
   };
 
-  const showEnvironmentDetails = () => {
-    const envDetails = {
-      browser: navigator.userAgent,
-      online: navigator.onLine,
-      language: navigator.language,
-      hasApiKey: !!import.meta.env?.VITE_REQUESTY_API_KEY,
-      viteMode: import.meta.env?.MODE || 'unknown'
-    };
-    
-    setDebugLogs(prev => [
-      ...prev,
-      `[DEBUG] Environment: ${JSON.stringify(envDetails, null, 2)}`
-    ]);
-  };
+  // Suggestion chips for common queries
+  const suggestions = [
+    "Find me a good restaurant nearby",
+    "What's the best Malaysian food?",
+    "Order nasi lemak from Grab",
+    "Track my FoodPanda order"
+  ];
 
   return (
-    <Card className="p-4 md:p-6 shadow-md border-primary/10 bg-white/80 backdrop-blur-sm">
-      <div className="flex flex-col h-[60vh] md:h-[70vh]">
-        {/* Header with language selection */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Food Ordering Assistant</h3>
-          <div className="flex gap-2">
-            <Button 
-              variant={useAgent ? "default" : "outline"} 
-              size="sm" 
-              className="gap-2"
-              onClick={toggleAgentMode}
-            >
-              <Bot size={16} />
-              {useAgent ? "Agent Mode" : "Standard Mode"}
-            </Button>
-            
-            <Button
-              variant={showDebug ? "default" : "outline"}
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowDebug(!showDebug)}
-            >
-              <Bug size={16} />
-              Debug
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Globe size={16} />
-                  {language === "english" ? "English" : "Bahasa Malaysia"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => language !== "english" && toggleLanguage()}>
-                  English
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => language !== "bahasa" && toggleLanguage()}>
-                  Bahasa Malaysia
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Debug panel */}
-        {showDebug && (
-          <div className="mb-4 p-2 bg-black/10 rounded-md">
-            <h4 className="text-sm font-medium mb-1">Debug Information</h4>
-            <div className="text-xs bg-black/20 p-2 rounded h-[15vh] overflow-y-auto font-mono">
-              {debugLogs.length === 0 ? (
-                <p>No debug logs yet. Send a message to see connection details.</p>
-              ) : (
-                debugLogs.map((log, index) => (
-                  <pre key={index} className="whitespace-pre-wrap break-words mb-1">
-                    {log}
-                  </pre>
-                ))
-              )}
-            </div>
-            <div className="flex gap-2 mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setDebugLogs([])}
-                className="text-xs"
-              >
-                Clear Logs
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  // Test network connectivity
-                  console.log("Testing connectivity...");
-                  fetch("https://httpbin.org/get")
-                    .then(res => res.json())
-                    .then(data => console.log("Connectivity test success:", data))
-                    .catch(err => console.error("Connectivity test failed:", err));
-                }}
-                className="text-xs"
-              >
-                Test Connection
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={showEnvironmentDetails}
-                className="text-xs"
-              >
-                Show Environment
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Chat messages */}
-        <div className="flex-1 overflow-y-auto mb-4 space-y-4 p-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.sender === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.sender === "user"
-                    ? "bg-primary text-white rounded-br-none"
-                    : "bg-muted rounded-bl-none"
-                }`}
-              >
-                <p className="text-sm">{message.text}</p>
-                {message.source && message.source !== "Error" && (
-                  <p className="text-xs mt-1 opacity-70">
-                    {language === "english" ? "Source" : "Sumber"}: {message.source}
+    <div className="container mx-auto px-4 max-w-4xl py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="border shadow-md overflow-hidden rounded-xl">
+          <div className="flex flex-col h-[calc(100vh-12rem)] max-h-[800px]">
+            {/* Header with controls */}
+            <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between bg-card gap-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  {useAgent ? (
+                    <Bot className="h-4 w-4 text-primary" />
+                  ) : (
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="font-medium">
+                    {useAgent ? "AI Food Assistant" : "Standard Chat"}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {language === "english" ? "Responding in English" : "Menjawab dalam Bahasa Malaysia"}
                   </p>
-                )}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="icon" onClick={clearChat}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Clear chat</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Globe className="h-4 w-4 mr-1" />
+                      {language === "english" ? "English" : "Bahasa"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setLanguage("english")}>
+                      English
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage("bahasa")}>
+                      Bahasa Malaysia
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <Button 
+                  variant={useAgent ? "default" : "outline"} 
+                  size="sm"
+                  onClick={toggleAgentMode}
+                  className="gap-1"
+                >
+                  {useAgent ? <Sparkles className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                  {useAgent ? "Agent Mode" : "Standard Mode"}
+                </Button>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Suggestion chips */}
-        {user && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInputValue("Recommend me something to eat")}
-              className="text-xs"
-            >
-              {language === "english" ? "Food recommendations" : "Cadangan makanan"}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInputValue("I want to order nasi lemak")}
-              className="text-xs"
-            >
-              {language === "english" ? "Order food" : "Pesan makanan"}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInputValue("Track my order status")}
-              className="text-xs"
-            >
-              {language === "english" ? "Track order" : "Jejak pesanan"}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setInputValue("Which food platforms do you support?")}
-              className="text-xs"
-            >
-              {language === "english" ? "Supported platforms" : "Platform yang disokong"}
-            </Button>
+            
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-secondary/10">
+              <AnimatePresence initial={false}>
+                {messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={cn(
+                      "flex",
+                      message.sender === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[85%] rounded-2xl p-4",
+                        message.sender === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card border shadow-sm"
+                      )}
+                    >
+                      <div className="text-sm whitespace-pre-wrap">
+                        {message.text}
+                      </div>
+                      {message.source && (
+                        <div className="text-xs mt-2 opacity-70 flex items-center">
+                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            {message.source}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              <div ref={messagesEndRef} />
+              
+              {/* Loading indicator */}
+              {isLoading && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-card border rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm">Thinking...</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+            
+            {/* Suggestion chips */}
+            <div className="p-3 border-t bg-card flex gap-2 overflow-x-auto">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    setInputValue(suggestion);
+                    inputRef.current?.focus();
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary whitespace-nowrap transition-colors flex items-center gap-1 hover:text-primary"
+                >
+                  {suggestion}
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+              ))}
+            </div>
+            
+            {/* Input area */}
+            <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
+              <div className="flex gap-2">
+                <Input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type your message..."
+                  disabled={isLoading}
+                  className="flex-1 rounded-full"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || !inputValue.trim()}
+                  size="icon"
+                  className="rounded-full h-10 w-10 flex items-center justify-center"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">Send</span>
+                </Button>
+              </div>
+            </form>
           </div>
-        )}
-
-        {/* Input area */}
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={
-              user
-                ? language === "english" 
-                  ? "Type your food order or question..." 
-                  : "Taip pesanan makanan atau soalan anda..."
-                : language === "english"
-                ? "Sign in to send messages"
-                : "Log masuk untuk menghantar mesej"
-            }
-            className="flex-1"
-            disabled={isLoading || agentLoading || !user}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={isLoading || agentLoading || !user || !inputValue.trim()}
-          >
-            {isLoading || agentLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-          </Button>
-        </form>
-        {!user && (
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            {language === "english" 
-              ? "Please " 
-              : "Sila "}
-            <a href="/auth" className="text-primary hover:underline">
-              {language === "english" ? "sign in" : "log masuk"}
-            </a>
-            {language === "english"
-              ? " to chat with the AI assistant."
-              : " untuk berbual dengan pembantu AI."}
-          </p>
-        )}
-      </div>
-    </Card>
+        </Card>
+      </motion.div>
+    </div>
   );
 };
 

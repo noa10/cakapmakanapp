@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { RequestyProvider } from '@/context/RequestyContext';
 import Index from '@/pages/Index';
 import Chat from '@/pages/Chat';
-import Business from '@/pages/Business';
 import Auth from '@/pages/Auth';
 import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
@@ -12,37 +11,23 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
-import NetworkStatus from '@/components/NetworkStatus';
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 import TestChat from '@/pages/TestChat';
 import Admin from '@/pages/Admin';
+import GrabSelfServe from '@/pages/GrabSelfServe';
+import BusinessDashboard from '@/pages/BusinessDashboard';
 
 function App() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   return (
     <Router>
       <AuthProvider>
         <RequestyProvider>
-          <NetworkStatus />
           <Navbar />
           <div className="min-h-screen pt-16">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/chat" element={<Chat />} />
-              <Route path="/business" element={<Business />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={
                 <ProtectedRoute>
@@ -55,6 +40,12 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/test-chat" element={<TestChat />} />
+              <Route path="/grab-self-serve" element={<GrabSelfServe />} />
+              <Route path="/business" element={
+                <ProtectedRoute>
+                  <BusinessDashboard />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

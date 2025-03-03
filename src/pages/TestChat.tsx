@@ -3,8 +3,6 @@ import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { sendMessageToRequesty } from "@/integrations/requesty";
 
@@ -106,7 +104,6 @@ const TestChat: React.FC = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1 pt-28 pb-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
@@ -179,7 +176,6 @@ const TestChat: React.FC = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

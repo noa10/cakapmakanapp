@@ -1,14 +1,10 @@
-
 import React from "react";
-import Navbar from "@/components/Navbar";
 import BusinessForm from "@/components/BusinessForm";
-import Footer from "@/components/Footer";
 import { Check } from "lucide-react";
 
 const Business = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1 pt-28 pb-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
@@ -60,7 +56,6 @@ const Business = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

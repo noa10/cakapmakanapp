@@ -12,7 +12,14 @@ export default defineConfig(({ mode }) => ({
       '/requesty-api': {
         target: 'https://router.requesty.ai',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/requesty-api/, ''),
+        rewrite: (path) => {
+          // Handle the base path for health checks
+          if (path === '/requesty-api') {
+            return '/';
+          }
+          // Normal path rewriting for API calls
+          return path.replace(/^\/requesty-api/, '');
+        },
         secure: true,
         headers: {
           'Origin': 'http://localhost:8080'

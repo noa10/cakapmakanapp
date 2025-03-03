@@ -1,13 +1,9 @@
-
 import React from "react";
-import Navbar from "@/components/Navbar";
 import ChatInterface from "@/components/ChatInterface";
-import Footer from "@/components/Footer";
 
 const Chat = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1 pt-20 pb-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
@@ -40,7 +36,6 @@ const Chat = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };
